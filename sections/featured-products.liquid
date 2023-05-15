@@ -1,0 +1,49 @@
+{{ 'section-featured-products.css' | asset_url | stylesheet_tag }}
+{{ 'component-featured-product-card.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'featured-product-card.js' | asset_url }}" defer></script>
+
+{% liquid
+  assign selected_collection = section.settings.collection
+  assign handles_in_cart = cart.items | map: 'product' | map: 'handle'
+%}
+{% if selected_collection != blank %}
+  <div
+    class="featured-products"
+    id="featured-products"
+    data-id="{{ section.id }}">
+    <div class="featured-products__inner">
+      <h2 class="featured-products__title">{{ section.settings.title }}</h2>
+      <ul class="featured-products__list">
+        {% liquid
+          for product in selected_collection.products
+            unless handles_in_cart contains product.handle
+              render 'featured-product-card', product: product
+            endunless
+          endfor
+        %}
+      </ul>
+    </div>
+  </div>
+{% endif %}
+{% schema %}
+  {
+    "name": "Featured Products",
+    "settings": [
+      {
+        "type": "collection",
+        "id": "collection",
+        "label": "Collection"
+      }, {
+        "type": "text",
+        "id": "title",
+        "label": "Title",
+        "default": "Featured Products"
+      }
+    ],
+    "presets": [
+      {
+        "name": "Featured Products"
+      }
+    ]
+  }
+{% endschema %}
