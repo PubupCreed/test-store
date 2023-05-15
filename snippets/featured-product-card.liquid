@@ -1,0 +1,74 @@
+{% liquid
+  assign selected_variant = product.selected_or_first_available_variant
+  assign image = selected_variant.featured_image | default: product.featured_image
+%}
+
+<li class="featured-product-card">
+  <div class="featured-product-card__image-container">
+    {% if image != blank %}
+      {{ 
+ image
+ | image_url: width: 1000
+ | image_tag:
+ loading: 'lazy',
+ sizes: '(min-width: 750px) 25vw, 90vw',
+ widths: '350, 550, 720, 990, 1100, 1500, 2200'
+ }}
+    {% endif %}
+  </div>
+
+  <h3 class="featured-product-card__title">
+    {{ product.title }}
+  </h3>
+  <div class="featured-product-card__options {% if product.variants.size > 1 %}group{% endif %}">
+    {%- for variant in product.variants -%}
+      {%- liquid
+        assign is_selected = false
+        if variant.id == selected_variant.id and product.variants.size > 1
+          assign is_selected = true
+        endif
+
+        assign discount = blank
+        if variant.compare_at_price > variant.price
+          assign discount = variant.price | times: 1.0 | divided_by: variant.compare_at_price | times: 100
+          assign discount = 100 | minus: discount | round
+        endif
+
+        assign title = variant.title
+        assign discount_label = blank
+        if discount != blank and product.variants.size > 1
+          assign title = title | append: ' - save ' | append: discount | append: '%'
+        elsif discount != blank and product.variants.size == 1
+          assign discount_label = '-' | append: discount | append: '%'
+        endif
+      -%}
+
+      {%- unless product.has_only_default_variant -%}
+        <div
+          id="{{variant.id}}"
+          class="featured-product-card__option {% if is_selected %}active{% endif %}"
+          onclick="changeVariant(this, '{{product.handle}}')">
+          <span>{{ title }}</span>
+      </div>
+      {%- endunless -%}
+
+      {%- if discount_label != blank -%}
+        <div class="featured-product-card__discount">
+          {{ discount_label }}
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+  </div>
+
+  <button
+    class="featured-product-card__btn"
+    data-variant-id="{{ selected_variant.id }}"
+    onclick="addToCart(this)"
+    {% unless selected_variant.available %}
+    disabled
+    {% endunless %}>
+    {{ 'products.product.add_to_cart' | t }}
+    -
+    {{ selected_variant.price | money_without_trailing_zeros }}
+  </button>
+</li>
